@@ -1,6 +1,6 @@
 {
-  "name": "juglans-logs",
-  "version": "1.0.2",
+  "name": "juglans-limit",
+  "version": "1.0.0",
   "description": "",
   "main": "lib/application.js",
   "scripts": {
