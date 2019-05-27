@@ -13,49 +13,62 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
  */
 const md5Hash = require('blueimp-md5');
 
+const assert = require('assert').strict;
+
+const is = require('is');
+
 const fmt = require('util').format;
 
 const FORMAT = {
   LIMIT: 'LIMIT:%s:%s'
 };
-module.exports = {
-  save(redis) {
-    return (
-      /*#__PURE__*/
-      function () {
-        var _ref = _asyncToGenerator(function* (ip, url, rate) {
-          try {
-            yield redis.set(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)), true, "EX", rate);
-          } catch (error) {
-            throw error;
-          }
-        });
 
-        return function (_x, _x2, _x3) {
-          return _ref.apply(this, arguments);
-        };
-      }()
-    );
-  },
+function RedisModel(_ref) {
+  let {
+    redis
+  } = _ref;
 
-  find(redis) {
-    return (
-      /*#__PURE__*/
-      function () {
-        var _ref2 = _asyncToGenerator(function* (ip, url, rate) {
-          try {
-            const ret = yield redis.get(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)));
-            return ret;
-          } catch (error) {
-            throw error;
-          }
-        });
-
-        return function (_x4, _x5, _x6) {
-          return _ref2.apply(this, arguments);
-        };
-      }()
-    );
+  if (!(this instanceof RedisModel)) {
+    return new RedisModel({
+      redis
+    });
   }
 
-};
+  assert.ok(!is.undefined(redis), 'redis can not be empty!');
+  this.redis = redis;
+}
+
+RedisModel.prototype.save =
+/*#__PURE__*/
+function () {
+  var _ref2 = _asyncToGenerator(function* (ip, url, rate) {
+    try {
+      yield this.redis.set(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)), true, "EX", rate);
+    } catch (error) {
+      throw error;
+    }
+  });
+
+  return function (_x, _x2, _x3) {
+    return _ref2.apply(this, arguments);
+  };
+}();
+
+RedisModel.prototype.find =
+/*#__PURE__*/
+function () {
+  var _ref3 = _asyncToGenerator(function* (ip, url, rate) {
+    try {
+      const ret = yield this.redis.get(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)));
+      return ret;
+    } catch (error) {
+      throw error;
+    }
+  });
+
+  return function (_x4, _x5, _x6) {
+    return _ref3.apply(this, arguments);
+  };
+}();
+
+module.exports.RedisModel = RedisModel;

@@ -15,8 +15,6 @@ const assert = require('assert').strict;
 
 const is = require('is');
 
-const Redis = require('juglans-addition').Redis;
-
 const model = require('./model');
 
 const defaultRate = 1;
@@ -46,20 +44,9 @@ module.exports = function () {
           router,
           config
         } = _ref2;
-
-        if (!(cfg && cfg.frequency && cfg.frequency.find) || !(cfg && cfg.frequency && cfg.frequency.save) && config.redis) {
-          const redis = Redis.retryConnect(config.redis.uri, config.redis.opts, function (err) {
-            if (err) {
-              console.error(err);
-            }
-          });
-          cfg.frequency = cfg.frequency || {}, cfg.frequency.find = model.find(redis);
-          cfg.frequency.save = model.save(redis);
-        }
-
+        cfg.frequency = cfg.frequency || {};
         cfg.frequency.failureHandler = cfg.frequency.failureHandler || defaultFailureHandler;
-        assert.ok(is.function(cfg.frequency.find), 'cfg.frequency.find can not be empty!');
-        assert.ok(is.function(cfg.frequency.save), 'cfg.frequency.save can not be empty!');
+        assert.ok(is.object(cfg.frequency.model), 'cfg.frequency.model can not be empty!');
         assert.ok(is.function(cfg.frequency.failureHandler), 'cfg.frequency.failureHandler can not be empty!');
         router.use(
         /*#__PURE__*/
@@ -69,7 +56,7 @@ module.exports = function () {
               const method = ctx.method.toUpperCase();
               const ip = ctx.ip;
               const reqPath = ctx.request.path;
-              const url = ctx.request.url; // skip rate check
+              const url = ctx.request.url; // Skip rate check
 
               if (cfg.frequency && cfg.frequency.passages && cfg.frequency.passages.length > 0) {
                 const pass = cfg.frequency.passages.find(x => {
@@ -85,7 +72,7 @@ module.exports = function () {
                 if (pass) {
                   return yield next();
                 }
-              } // rate check
+              } // Rule check
 
 
               if (cfg.frequency && cfg.frequency.rules.length > 0) {
@@ -107,15 +94,16 @@ module.exports = function () {
                 });
 
                 if (rule) {
-                  const line = yield cfg.frequency.find(ip, url, rule.rate || defaultRate);
+                  const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
 
                   if (line) {
                     return yield cfg.frequency.failureHandler(ctx);
                   } else {
-                    yield cfg.frequency.save(ip, url, rule.rate || defaultRate);
+                    yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
                   }
                 }
-              }
+              } // All Pass
+
 
               yield next();
             } catch (err) {
@@ -135,3 +123,5 @@ module.exports = function () {
     }()
   );
 };
+
+module.exports.model = model;
