@@ -102,8 +102,7 @@ module.exports = function () {
                     yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
                   }
                 }
-              } // All Pass
-
+              }
 
               yield next();
             } catch (err) {
