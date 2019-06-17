@@ -4,13 +4,9 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-/**
- * @author [Double]
- * @email [2637309949@qq.com]
- * @create date 2019-01-09 16:55:19
- * @modify date 2019-01-09 16:55:19
- * @desc [limit]
- */
+// Copyright (c) 2018-2020 Double.  All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
 const assert = require('assert').strict;
 
 const is = require('is');
@@ -58,49 +54,20 @@ module.exports = function () {
               const reqPath = ctx.request.path;
               const url = ctx.request.url; // Skip rate check
 
-              if (cfg.frequency && cfg.frequency.passages && cfg.frequency.passages.length > 0) {
-                const pass = cfg.frequency.passages.find(x => {
-                  if (is.regexp(x)) {
-                    return x.test(reqPath);
-                  } else if (is.string(x)) {
-                    return x === reqPath;
-                  }
-
-                  return false;
-                });
-
-                if (pass) {
-                  return yield next();
-                }
+              if (passagesMatch(cfg.frequency && cfg.frequency.passages || [])) {
+                return yield next();
               } // Rule check
 
 
-              if (cfg.frequency && cfg.frequency.rules.length > 0) {
-                const rule = cfg.frequency.rules.find(x => {
-                  let ruleMatch = false;
-                  let methodMatch = true;
+              const rule = ruleMatch(cfg.frequency && cfg.frequency.rules || [], reqPath, method);
 
-                  if (is.regexp(x.match)) {
-                    ruleMatch = x.match.test(reqPath);
-                  } else if (is.string(x.match)) {
-                    ruleMatch = x.match === reqPath;
-                  }
+              if (rule) {
+                const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
 
-                  if (x.methods && x.methods.length > 0) {
-                    methodMatch = !!x.methods.find(x => x.toUpperCase() === method);
-                  }
-
-                  return methodMatch && ruleMatch;
-                });
-
-                if (rule) {
-                  const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
-
-                  if (line) {
-                    return yield cfg.frequency.failureHandler(ctx);
-                  } else {
-                    yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
-                  }
+                if (line) {
+                  return yield cfg.frequency.failureHandler(ctx);
+                } else {
+                  yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
                 }
               }
 
@@ -122,5 +89,36 @@ module.exports = function () {
     }()
   );
 };
+
+function passagesMatch(passages, reqPath) {
+  return !!passages.find(x => {
+    if (is.regexp(x)) {
+      return x.test(reqPath);
+    } else if (is.string(x)) {
+      return x === reqPath;
+    }
+
+    return false;
+  });
+}
+
+function ruleMatch(rules, reqPath, reqMethod) {
+  return rules.find(x => {
+    let ruleMatch = false;
+    let methodMatch = true;
+
+    if (is.regexp(x.match)) {
+      ruleMatch = x.match.test(reqPath);
+    } else if (is.string(x.match)) {
+      ruleMatch = x.match === reqPath;
+    }
+
+    if (x.methods && x.methods.length > 0) {
+      methodMatch = !!x.methods.find(x => x.toUpperCase() === reqMethod);
+    }
+
+    return methodMatch && ruleMatch;
+  });
+}
 
 module.exports.model = model;
