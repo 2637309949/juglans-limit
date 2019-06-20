@@ -39,7 +39,7 @@ RedisModel.prototype.save =
 function () {
   var _ref2 = _asyncToGenerator(function* (ip, url, rate) {
     try {
-      yield this.redis.set(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)), true, "EX", rate);
+      yield this.redis.set(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)), true, 'EX', rate);
     } catch (error) {
       throw error;
     }
