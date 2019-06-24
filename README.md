@@ -10,7 +10,8 @@
       rules: [{
         methods: ['GET'],
         match: /api\/v1\/user*/,
-        rate: 1
+        // every 10s can request 6 time
+        rate: 6
       }],
       async failureHandler (ctx) {
         ctx.status = 500

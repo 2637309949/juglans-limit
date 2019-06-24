@@ -39,7 +39,14 @@ RedisModel.prototype.save =
 function () {
   var _ref2 = _asyncToGenerator(function* (ip, url, rate) {
     try {
-      yield this.redis.set(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)), true, 'EX', rate);
+      const key = fmt(FORMAT.LIMIT, md5Hash(ip), url);
+      const incr = yield this.redis.get(key);
+
+      if (!incr) {
+        yield this.redis.set(key, 1, 'EX', 10);
+      } else {
+        yield this.redis.incr(key);
+      }
     } catch (error) {
       throw error;
     }
@@ -55,7 +62,17 @@ RedisModel.prototype.find =
 function () {
   var _ref3 = _asyncToGenerator(function* (ip, url, rate) {
     try {
-      const ret = yield this.redis.get(fmt(FORMAT.LIMIT, md5Hash(ip), md5Hash(url)));
+      const key = fmt(FORMAT.LIMIT, md5Hash(ip), url);
+      const ret = yield this.redis.get(key);
+
+      if (ret) {
+        const retInt = parseInt(ret);
+
+        if (retInt <= rate) {
+          return;
+        }
+      }
+
       return ret;
     } catch (error) {
       throw error;

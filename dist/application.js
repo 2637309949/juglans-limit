@@ -13,6 +13,8 @@ const deepmerge = require('deepmerge');
 
 const is = require('is');
 
+const logger = require('./logger');
+
 const model = require('./model');
 
 const defaultRate = 1;
@@ -77,6 +79,7 @@ module.exports = function () {
 
               yield next();
             } catch (err) {
+              logger.error(err.stack || err.message);
               throw err;
             }
           });
