@@ -9,57 +9,61 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 // license that can be found in the LICENSE file.
 const assert = require('assert').strict;
 
+const deepmerge = require('deepmerge');
+
 const is = require('is');
 
 const model = require('./model');
 
 const defaultRate = 1;
+const defaultOpts = {
+  frequency: {
+    rules: [],
+    passages: [],
 
-const defaultFailureHandler =
-/*#__PURE__*/
-function () {
-  var _ref = _asyncToGenerator(function* (ctx) {
-    ctx.status = 500;
-    ctx.body = {
-      message: 'Rate Limited access, Pease Check Again Later.'
-    };
-  });
+    failureHandler(ctx) {
+      return _asyncToGenerator(function* () {
+        ctx.status = 500;
+        ctx.body = {
+          message: 'Rate Limited access, Pease Check Again Later.'
+        };
+      })();
+    }
 
-  return function defaultFailureHandler(_x) {
-    return _ref.apply(this, arguments);
-  };
-}();
+  }
+};
 
 module.exports = function () {
   let cfg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   return (
     /*#__PURE__*/
     function () {
-      var _ref3 = _asyncToGenerator(function* (_ref2) {
+      var _ref2 = _asyncToGenerator(function* (_ref) {
         let {
           router,
           config
-        } = _ref2;
-        cfg.frequency = cfg.frequency || {};
-        cfg.frequency.failureHandler = cfg.frequency.failureHandler || defaultFailureHandler;
+        } = _ref;
+        const model = cfg.frequency.model;
+        delete cfg.frequency.model;
+        cfg = deepmerge.all([defaultOpts, cfg]);
+        cfg.frequency.model = model;
         assert.ok(is.object(cfg.frequency.model), 'cfg.frequency.model can not be empty!');
         assert.ok(is.function(cfg.frequency.failureHandler), 'cfg.frequency.failureHandler can not be empty!');
         router.use(
         /*#__PURE__*/
         function () {
-          var _ref4 = _asyncToGenerator(function* (ctx, next) {
+          var _ref3 = _asyncToGenerator(function* (ctx, next) {
             try {
               const method = ctx.method.toUpperCase();
               const ip = ctx.ip;
               const reqPath = ctx.request.path;
-              const url = ctx.request.url; // Skip rate check
+              const url = ctx.request.url;
 
-              if (passagesMatch(cfg.frequency && cfg.frequency.passages || [])) {
+              if (passagesMatch(cfg.frequency.passages)) {
                 return yield next();
-              } // Rule check
+              }
 
-
-              const rule = ruleMatch(cfg.frequency && cfg.frequency.rules || [], reqPath, method);
+              const rule = ruleMatch(cfg.frequency.rules, reqPath, method);
 
               if (rule) {
                 const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
@@ -77,14 +81,14 @@ module.exports = function () {
             }
           });
 
-          return function (_x3, _x4) {
-            return _ref4.apply(this, arguments);
+          return function (_x2, _x3) {
+            return _ref3.apply(this, arguments);
           };
         }());
       });
 
-      return function (_x2) {
-        return _ref3.apply(this, arguments);
+      return function (_x) {
+        return _ref2.apply(this, arguments);
       };
     }()
   );

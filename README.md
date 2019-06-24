@@ -1,5 +1,7 @@
-# juglans-limit
-### Use
+## juglans-limit
+
+### Example
+
 ```javascript
   app.Use(Limit({
     frequency: {
@@ -18,6 +20,22 @@
       }
     }
   }))
+```
+### API
+
+```javascript
+const defaultOpts = {
+  frequency: {
+    rules: []
+  },
+  passages: [],
+  failureHandler: async function (ctx) {
+    ctx.status = 500
+    ctx.body = {
+      message: 'Rate Limited access, Pease Check Again Later.'
+    }
+  }
+}
 ```
 ## MIT License
 
