@@ -58,6 +58,6 @@
     "blueimp-md5": "^2.11.0",
     "deepmerge": "^3.3.0",
     "is": "^3.3.0",
-    "juglans-addition": "^1.0.5"
+    "juglans-addition": "^1.0.7"
   }
 }
