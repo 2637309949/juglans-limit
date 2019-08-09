@@ -13,8 +13,6 @@ const deepmerge = require('deepmerge');
 
 const is = require('is');
 
-const logger = require('./logger');
-
 const model = require('./model');
 
 const defaultRate = 1;
@@ -56,33 +54,30 @@ module.exports = function () {
         /*#__PURE__*/
         function () {
           var _ref3 = _asyncToGenerator(function* (ctx, next) {
-            try {
-              const method = ctx.method.toUpperCase();
-              const ip = ctx.ip;
-              const reqPath = ctx.request.path;
-              const url = ctx.request.url;
+            const method = ctx.method.toUpperCase();
+            const ip = ctx.ip;
+            const reqPath = ctx.request.path;
+            const url = ctx.request.url;
 
-              if (passagesMatch(cfg.frequency.passages)) {
-                return yield next();
-              }
-
-              const rule = ruleMatch(cfg.frequency.rules, reqPath, method);
-
-              if (rule) {
-                const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
-
-                if (line) {
-                  return yield cfg.frequency.failureHandler(ctx);
-                } else {
-                  yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
-                }
-              }
-
+            if (passagesMatch(cfg.frequency.passages)) {
               yield next();
-            } catch (err) {
-              logger.error(err.stack || err.message);
-              throw err;
+              return;
             }
+
+            const rule = ruleMatch(cfg.frequency.rules, reqPath, method);
+
+            if (rule) {
+              const line = yield cfg.frequency.model.find(ip, url, rule.rate || defaultRate);
+
+              if (line) {
+                yield cfg.frequency.failureHandler(ctx);
+                return;
+              } else {
+                yield cfg.frequency.model.save(ip, url, rule.rate || defaultRate);
+              }
+            }
+
+            yield next();
           });
 
           return function (_x2, _x3) {
