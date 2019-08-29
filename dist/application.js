@@ -25,8 +25,7 @@ const defaultOpts = {
       return _asyncToGenerator(function* () {
         ctx.status = 500;
         ctx.body = {
-          message: 'Internal Server Error',
-          stack: 'Rate Limited access, Pease Check Again Later.'
+          message: 'Rate Limited access, Pease Check Again Later'
         };
       })();
     }
